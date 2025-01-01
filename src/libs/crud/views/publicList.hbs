@@ -1,0 +1,133 @@
+<h1>Posts</h1>
+
+<ul class="nav">
+  <li class="nav-item">
+    <a class="nav-link" href="/{{moduleConfig.codeMany}}/add">Add post</a>
+  </li>
+</ul>
+
+{{#if message}}
+  <div class="alert alert-info" role="alert">
+    {{message}}
+  </div>
+{{/if}}
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Image</th>
+      <th>Title</th>
+      <th>Featured</th>
+      <th>Published</th>
+      <th>Created</th>
+      <th>Modified</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+
+    {{#each posts}}
+      <tr>
+        <td>{{this.num}}</td>
+        <td>{{#if this.image}}
+            <img
+              class="post-list-image-small"
+              src="/files/images/{{this.image}}/small.png"
+              alt="{{this.imageTitle}}"
+            />
+          {{/if}}</td>
+        <td>{{this.title}}</td>
+        <td>
+          {{#if this.isFeatured}}
+            <i class="bi bi-check-square-fill"></i>
+          {{else}}
+            <i class="bi bi-square"></i>
+          {{/if}}
+        </td>
+        <td>
+          {{#if this.isPublished}}
+            <i class="bi bi-check-square-fill"></i>
+          {{else}}
+            <i class="bi bi-square"></i>
+          {{/if}}
+        </td>
+        <td data-dateformat="dd.mm.yyyy">{{this.created}}</td>
+        <td data-dateformat="dd.mm.yyyy">{{this.modified}}</td>
+        <td>
+          <button
+            type="button"
+            class="btn btn-outline-primary btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#source-content-{{this.id}}"
+          >
+            <i class="bi bi-eye"></i>
+          </button>
+          <a
+            href="/admin/sources/add/{{this.id}}"
+            class="btn btn-outline-primary btn-sm"
+          >
+            <i class="bi bi-pencil"></i>
+          </a>
+          <a
+            href="/admin/sources/remove/{{this.id}}"
+            class="btn btn-outline-primary btn-sm"
+          >
+            <i class="bi bi-trash"></i>
+          </a>
+        </td>
+      </tr>
+    {{/each}}
+  </tbody>
+</table>
+
+{{#each posts}}
+  <div
+    class="modal modal-lg fade"
+    id="source-content-{{this.id}}"
+    tabindex="-1"
+    aria-labelledby="source-content-{{this.id}}-label"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="source-content-{{this.id}}-label">
+            {{this.title}}
+          </h1>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+          >
+          </button>
+        </div>
+        <div class="modal-body">
+          {{#if this.image}}
+            <div>
+              <img
+                class="post-list-image-medium"
+                src="/files/images/{{this.image}}/medium.png"
+                alt="{{this.imageTitle}}"
+              />
+            </div>
+          {{/if}}
+
+          <p>{{this.intro}}</p>
+
+          {{{this.content}}}
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{{/each}}

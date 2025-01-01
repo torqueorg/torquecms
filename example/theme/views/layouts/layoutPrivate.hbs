@@ -1,0 +1,62 @@
+<html>
+  <head>
+    <title>Admin - {{title}}</title>
+    <link rel="stylesheet" href="/styles/style.css" />
+    <link rel="stylesheet" href="/styles/bootstrap.css" />
+    <link rel="stylesheet" href="/icons/bootstrap-icons.min.css" />
+    <script src="/js/bootstrap.js"></script>
+    <script src="/js/jquery.js"></script>
+    <script src="/js/data-dateformat.js"></script>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary sticky-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/admin">Admin</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="/admin">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/auth/login">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/modules">Modules ({{modules.length}})</a>
+            </li>
+          </ul>
+
+          <ui class="navbar-nav mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/modules/config">Config</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_blank">Preview
+                <i class="bi bi-box-arrow-up-right"></i></a>
+            </li>
+          </ui>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-fluid">
+      {{#if error}}
+        <div class="alert alert-danger" role="alert">
+          {{error}}
+        </div>
+      {{/if}}
+
+      {{{body}}}
+    </div>
+  </body>
+</html>

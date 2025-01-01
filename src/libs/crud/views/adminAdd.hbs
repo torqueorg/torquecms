@@ -1,0 +1,96 @@
+
+<style>
+  .CodeMirror { height: 300px; }
+</style>
+
+{{#if post}}
+<h1>Edit post</h1>
+{{else}}
+<h1>Add post</h1>
+{{/if}}
+
+{{post.title}}
+
+
+<form id="formPost" method="post" enctype="multipart/form-data">
+  <input
+    name="postId"
+    type="hidden"
+    value="{{#if post}}{{post.id}}{{/if}}"
+  />
+
+  <input
+    name="url"
+    type="hidden"
+    value="/admin/posts/add"
+  />
+  <input
+    name="redirect"
+    type="hidden"
+    value="/admin/posts"
+  />
+
+  <div class="mb-3 text-end">
+    <button class="btn btn-primary">Save</button>
+    <a class="btn btn-outline-secondary" href="/admin/posts">Cancel</a>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div class="mb-3">
+        <label for="inputTitle" class="form-label">Title</label>
+        <input
+          name="title"
+          type="text"
+          class="form-control"
+          id="inputTitle"
+          placeholder="Title"
+          value="{{#if post}}{{post.title}}{{/if}}"
+          required
+        />
+      </div>
+      <div class="mb-3">
+        <label for="inputIntro" class="form-label">Introduction</label>
+        <textarea
+          name="intro"
+          class="form-control"
+          id="inputIntro"
+          placeholder="Introduction"
+          rows="5"
+        >{{#if post}}{{post.intro}}{{/if}}</textarea>
+      </div>
+      <div class="mb-3">
+        <input class="form-check-input" type="checkbox" name="isFeatured" value="true" id="formPostFeaturedInput" {{#if post.isFeatured}} checked{{/if}}>
+        <label class="form-check-label" for="formPostFeaturedInput">
+          Featured
+        </label>
+      </div>
+      <div class="mb-3">
+        <input class="form-check-input" type="checkbox" name="isPublished" value="true" id="formPostFeaturedInput" {{#if post.isPublished}} checked{{/if}}>
+        <label class="form-check-label" for="formPostFeaturedInput">
+          Published
+        </label>
+      </div>
+    </div>
+    <div class="col">
+      <input type="hidden" name="image" id="formPostImageInput" value="{{post.image}}" />
+      <input type="file" name="file" id="formPostImageFileInput" />
+
+      <div class="container-post-image-preview">
+        <img id="formPostImagePreview" src="{{#if post.image}}/files/images/{{post.image}}/medium.png{{/if}}" />
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="inputPostContent" class="form-label">Content</label>
+    <textarea
+      name="content"
+      class="form-control"
+      id="inputPostContent"
+      placeholder="Content"
+      style="height:100px"
+    >{{#if post}}{{post.content}}{{/if}}</textarea>
+  </div>
+</form>
+

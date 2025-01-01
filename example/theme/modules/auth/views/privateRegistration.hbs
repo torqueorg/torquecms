@@ -1,0 +1,32 @@
+<h1>Registration</h1>
+
+<form method="post">
+  <input name="url" type="hidden" value="/admin/auth/login" />
+  <input name="redirect" type="hidden" value="/admin" />
+
+  <div class="mb-3">
+    <label for="inputEmail" class="form-label">Email address</label>
+    <input
+      type="email"
+      class="form-control"
+      id="inputEmail"
+      placeholder="name@example.com"
+      required
+    />
+  </div>
+  <div class="mb-3">
+    <label for="inputPassword" class="form-label">Password</label>
+    <input
+      type="password"
+      class="form-control"
+      id="inputPassword"
+      placeholder="secret"
+      required
+    />
+  </div>
+
+  <div class="mb-3">
+    <button class="btn btn-primary">Register</button>
+    <a class="btn btn-outline-secondary" href="/admin/auth/login">Login</a>
+  </div>
+</form>
