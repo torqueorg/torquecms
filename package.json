@@ -1,0 +1,75 @@
+{
+  "name": "torquecms",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "NODE_ENV=development nodemon --trace-warnings ./example/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "description": "",
+  "dependencies": {
+    "bootstrap": "5.3.3",
+    "bootstrap-icons": "1.11.3",
+    "cookie-parser": "1.4.7",
+    "debug": "4.4.0",
+    "dotenv": "16.4.7",
+    "express": "4.21.2",
+    "express-handlebars": "8.0.1",
+    "formidable": "3.5.2",
+    "hbs": "4.2.0",
+    "http-errors": "2.0.0",
+    "jimp": "1.6.0",
+    "jquery": "3.7.1",
+    "node-cron": "3.0.3",
+    "on-headers": "1.0.2",
+    "sqlite3": "5.1.7",
+    "uuid": "11.0.3",
+    "webp-converter": "2.3.3"
+  },
+  "devDependencies": {
+    "nodemon": "3.1.9",
+    "prettier": "3.4.2"
+  },
+  "peerDependencies": {
+    "uuid": "10.0.0"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "tabWidth": 2,
+    "useTabs": false,
+    "semi": true,
+    "trailingComma": "none",
+    "bracketSpacing": true,
+    "jsxBracketSameLine": false,
+    "fluid": false,
+    "singleQuote": true,
+    "overrides": [
+      {
+        "files": [
+          "**/*.css",
+          "**/*.scss",
+          "**/*.html",
+          "**/*.json",
+          "**/*.hbs"
+        ],
+        "options": {
+          "singleQuote": false
+        }
+      },
+      {
+        "files": "**/*.hbs",
+        "options": {
+          "parser": "angular"
+        }
+      }
+    ],
+    "arrowParens": "avoid"
+  }
+}
