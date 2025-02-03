@@ -26,7 +26,8 @@ function start(optionsStart = {}) {
     port: '4444',
     dbPath: path.join(__dirname, 'data.db'),
     theme: themeDefault,
-    modules: []
+    modules: [],
+    options: {}
   };
   const options = {};
 
@@ -166,6 +167,7 @@ function start(optionsStart = {}) {
     });
 
     req.__dirname = __dirname;
+    req.__options = { ...options.options };
     res.locals.modules = dbSchemas;
 
     next();
