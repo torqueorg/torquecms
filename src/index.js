@@ -1,6 +1,7 @@
 import debugSetup from 'debug';
 import express from 'express';
 import http from 'http';
+import https from 'https';
 import createError from 'http-errors';
 import path from 'path';
 import cookieParser from 'cookie-parser';
@@ -17,9 +18,6 @@ import themeDefault from './theme/index.js';
 
 const __dirname = import.meta.dirname;
 const debug = debugSetup('app/src/index');
-const app = express();
-const server = http.createServer(app);
-const router = express.Router();
 
 function start(optionsStart = {}) {
   const optionsDefault = {
@@ -50,6 +48,18 @@ function start(optionsStart = {}) {
     }
   });
 
+  const app = express();
+  const server =
+    options.options && options.options.isSSL && options.options.certificates
+      ? https.createServer(
+          {
+            key: options.options.certificates.key,
+            cert: options.options.certificates.cert
+          },
+          app
+        )
+      : http.createServer(app);
+  const router = express.Router();
   const views = [];
   const assets = [];
   const dbSchemas = [];
@@ -117,6 +127,12 @@ function start(optionsStart = {}) {
       });
     });
   });
+
+  if (options.options && options.options.staticPaths) {
+    options.options.staticPaths.forEach(function (staticPath) {
+      app.use(staticPath.path, express.static(staticPath.folder));
+    });
+  }
 
   const port = normalizePort(options.port || '4444');
   const db = new dbs['sqlite'](options.dbPath, dbSchemas);
