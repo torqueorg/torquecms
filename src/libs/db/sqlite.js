@@ -9,23 +9,19 @@ class Sqlite {
   }
 
   init(pathToDb, modules) {
-    debug('init');
     this.pathToDb = pathToDb;
     try {
       const db = this.open();
 
       db.serialize(() => {
-        debug('check tables');
-
         db.all(
           'SELECT name FROM sqlite_master WHERE type="table"',
           (err, result) => {
             if (err) {
-              return debug(err);
+              return debug('Init serialize', err);
             }
 
             const tables = result;
-            debug('tables', tables);
 
             modules.forEach(module => {
               if (tables.find(table => table.name === module.name)) {
@@ -42,10 +38,8 @@ class Sqlite {
                 `CREATE TABLE ${module.name} (${fields.join(',')})`,
                 (err, result) => {
                   if (err) {
-                    return debug(err);
+                    return debug('Create error', err);
                   }
-
-                  debug('Created', module.name, result);
                 }
               );
             });
@@ -54,8 +48,6 @@ class Sqlite {
           }
         );
       });
-
-      debug('Init success');
     } catch (e) {
       debug('Init Error', e);
     }
@@ -64,25 +56,43 @@ class Sqlite {
   }
 
   open() {
-    debug('open', this.pathToDb);
     const dbSetup = sqlite.verbose();
     const db = new dbSetup.Database(this.pathToDb);
     return db;
   }
 
-  get(type) {
+  get(type, options) {
+    const query = [`SELECT * FROM ${type}`];
+
+    if (options) {
+      const where = [];
+
+      if (options.where) {
+        where.push(`${options.where}`);
+      }
+
+      if (options.from) {
+        where.push(`${options.from.key} >= ${options.from.value}`);
+      }
+
+      if (where.length) {
+        query.push(`WHERE ${where.join(' AND ')}`);
+      }
+
+      if (options.limit) {
+        query.push(`LIMIT ${options.limit}`);
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const db = this.open();
       db.serialize(() => {
-        debug('get', type);
-
-        db.all(`SELECT * FROM ${type}`, (err, result) => {
+        db.all(query.join(' '), (err, result) => {
           if (err) {
             debug('get err', err);
             return reject(err);
           }
 
-          debug('get result', result);
           db.close();
           resolve(result);
         });
@@ -94,15 +104,11 @@ class Sqlite {
     return new Promise((resolve, reject) => {
       const db = this.open();
       db.serialize(() => {
-        debug('getOne', type, id);
-
         db.get(`SELECT * FROM ${type} WHERE id="${id}"`, (err, result) => {
           if (err) {
             debug('getOne err', err);
             return reject(err);
           }
-
-          debug('getOne result', result);
           db.close();
           resolve(result);
         });
@@ -114,8 +120,6 @@ class Sqlite {
     return new Promise((resolve, reject) => {
       const db = this.open();
       db.serialize(() => {
-        debug('add', type);
-
         const columns = [];
         const values = [];
 
@@ -139,16 +143,11 @@ class Sqlite {
 
         const statement = `INSERT INTO ${type} (${columns.join(',')}) VALUES(${columns.fill('?')})`;
 
-        debug('add', 'statement', statement);
-        debug('add', 'values', values);
-
         db.run(statement, values, function (err, result) {
           if (err) {
             debug(err);
             return reject(err);
           }
-
-          debug(`Row was added to the table: ${result}`);
           db.close();
           resolve();
         });
@@ -160,8 +159,6 @@ class Sqlite {
     return new Promise((resolve, reject) => {
       const db = this.open();
       db.serialize(() => {
-        debug('updateOne', type, id);
-
         const columns = [];
         const values = [];
 
@@ -186,14 +183,11 @@ class Sqlite {
         values.push(id);
         const statement = `UPDATE ${type} SET ${columns.join(',')} WHERE id=?`;
 
-        debug('update', 'statement', statement, values);
-
         db.run(statement, values, (err, result) => {
           if (err) {
             debug(err);
             return reject(err);
           }
-          debug(`Row was updated to the table: ${result}`);
           db.close();
           resolve();
         });
@@ -205,15 +199,11 @@ class Sqlite {
     return new Promise((resolve, reject) => {
       const db = this.open();
       db.serialize(() => {
-        debug('removeOne', type, id);
-
         db.all(`DELETE FROM ${type} WHERE id="${id}"`, (err, result) => {
           if (err) {
             debug('removeOne err', err);
             return reject(err);
           }
-
-          debug('removeOne result', result);
           db.close();
           resolve(result);
         });
@@ -221,8 +211,20 @@ class Sqlite {
     });
   }
 
-  getSize() {
-    return this.db.length;
+  getCount(type) {
+    return new Promise((resolve, reject) => {
+      const db = this.open();
+      db.serialize(() => {
+        db.all(`SELECT COUNT("_id") FROM ${type}`, (err, result) => {
+          if (err) {
+            debug('getCount err', err);
+            return reject(err);
+          }
+          db.close();
+          resolve(result);
+        });
+      });
+    });
   }
 
   debugModeOn() {

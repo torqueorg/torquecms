@@ -7,6 +7,8 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import { engine } from 'express-handlebars';
 import onHeaders from 'on-headers';
+import net from 'net';
+import killPort from 'kill-port';
 
 import routing from './libs/routing/index.js';
 import normalizePort from './libs/normalizePort/index.js';
@@ -18,6 +20,27 @@ import themeDefault from './theme/index.js';
 
 const __dirname = import.meta.dirname;
 const debug = debugSetup('app/src/index');
+
+function isPortInUse(port) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+
+    server.once('error', function(err) {
+      if (err.code === 'EADDRINUSE') {
+        return resolve(true);
+      }
+
+      reject(err);
+    });
+
+    server.once('listening', function() {
+      server.close();
+      resolve(false);
+    });
+
+    server.listen(port);
+  });
+}
 
 function start(optionsStart = {}) {
   const optionsDefault = {
@@ -36,7 +59,6 @@ function start(optionsStart = {}) {
       };
 
       Object.keys(optionsDefault.theme).forEach(themeKey => {
-        debug('themeKey', themeKey, optionsDefault.theme[themeKey]);
         if (optionsStart.theme && optionsStart.theme[themeKey]) {
           options.theme[themeKey] = optionsStart.theme[themeKey];
         } else {
@@ -140,9 +162,6 @@ function start(optionsStart = {}) {
   app.set('port', port);
   app.set('DB', db);
 
-  debug('views', views);
-  debug('assets', assets);
-
   app.engine(
     'hbs',
     engine({
@@ -171,15 +190,15 @@ function start(optionsStart = {}) {
       const diff = process.hrtime(startAt);
       const time = diff[0] * 1e3 + diff[1] * 1e-6;
 
-      debug(
-        'middleware',
-        ip,
-        req.method,
-        req.baseUrl,
-        req.originalUrl || req.url,
-        res.statusCode,
-        time.toFixed(3) + 'ms'
-      );
+      // debug(
+      //   'middleware',
+      //   ip,
+      //   req.method,
+      //   req.baseUrl,
+      //   req.originalUrl || req.url,
+      //   res.statusCode,
+      //   time.toFixed(3) + 'ms'
+      // );
     });
 
     req.__dirname = __dirname;
@@ -208,7 +227,16 @@ function start(optionsStart = {}) {
     res.render('error');
   });
 
-  server.listen(port);
+  isPortInUse(port).then(function(isInUse) {
+    if (isInUse) {
+      killPort(port);
+    }
+
+    server.listen(port);
+  }).catch(function(err) {
+    console.error(err);
+  });
+
   server.on('error', function (error) {
     if (error.syscall !== 'listen') {
       throw error;
