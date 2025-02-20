@@ -36,7 +36,6 @@ function start(optionsStart = {}) {
       };
 
       Object.keys(optionsDefault.theme).forEach(themeKey => {
-        debug('themeKey', themeKey, optionsDefault.theme[themeKey]);
         if (optionsStart.theme && optionsStart.theme[themeKey]) {
           options.theme[themeKey] = optionsStart.theme[themeKey];
         } else {
@@ -140,9 +139,6 @@ function start(optionsStart = {}) {
   app.set('port', port);
   app.set('DB', db);
 
-  debug('views', views);
-  debug('assets', assets);
-
   app.engine(
     'hbs',
     engine({
@@ -171,15 +167,15 @@ function start(optionsStart = {}) {
       const diff = process.hrtime(startAt);
       const time = diff[0] * 1e3 + diff[1] * 1e-6;
 
-      debug(
-        'middleware',
-        ip,
-        req.method,
-        req.baseUrl,
-        req.originalUrl || req.url,
-        res.statusCode,
-        time.toFixed(3) + 'ms'
-      );
+      // debug(
+      //   'middleware',
+      //   ip,
+      //   req.method,
+      //   req.baseUrl,
+      //   req.originalUrl || req.url,
+      //   res.statusCode,
+      //   time.toFixed(3) + 'ms'
+      // );
     });
 
     req.__dirname = __dirname;
