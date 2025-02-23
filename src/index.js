@@ -72,14 +72,14 @@ function start(optionsStart = {}) {
 
   const app = express();
   const server =
-    options.options && options.options.isSSL && options.options.certificates
+    options.options && options.options.SSL
       ? https.createServer(
-          {
-            key: options.options.certificates.key,
-            cert: options.options.certificates.cert
-          },
-          app
-        )
+        {
+          key: options.options.SSL.key,
+          cert: options.options.SSL.cert
+        },
+        app
+      )
       : http.createServer(app);
   const router = express.Router();
   const views = [];
