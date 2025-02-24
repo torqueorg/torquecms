@@ -28,7 +28,7 @@
     "node-cron": "3.0.3",
     "on-headers": "1.0.2",
     "sqlite3": "5.1.7",
-    "uuid": "10.0.0",
+    "uuid": "11.1.0",
     "webp-converter": "2.3.3"
   },
   "devDependencies": {
@@ -36,7 +36,7 @@
     "prettier": "3.5.1"
   },
   "peerDependencies": {
-    "uuid": "10.0.0"
+    "uuid": "11.1.0"
   },
   "engines": {
     "node": "22"
