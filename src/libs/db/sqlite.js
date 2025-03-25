@@ -1,30 +1,31 @@
 import debugSetup from 'debug';
 import sqlite from 'sqlite3';
+import Sequelize from 'sequelize';
 
 const debug = debugSetup('app/src/libs/db/sqlite');
 
 class Sqlite {
   constructor(pathToDb, modules) {
-    this.init(pathToDb, modules);
+    this.pathToDb = pathToDb;
+    this.init(modules);
   }
 
-  init(pathToDb, modules) {
-    this.pathToDb = pathToDb;
+  async init(modules) {
     try {
       const db = this.open();
+      const [tables] = await db.query(
+        'SELECT name FROM sqlite_master WHERE type="table"',
+        { raw: true }
+      );
 
-      db.serialize(() => {
-        db.all(
-          'SELECT name FROM sqlite_master WHERE type="table"',
-          (err, result) => {
-            if (err) {
-              return debug('Init serialize', err);
-            }
+      console.log('tables', tables);
 
-            const tables = result;
-
-            modules.forEach(module => {
+      await Promise.all(
+        modules.map(
+          module =>
+            new Promise((resolve, reject) => {
               if (tables.find(table => table.name === module.name)) {
+                resolve();
                 return;
               }
 
@@ -34,20 +35,15 @@ class Sqlite {
                 );
               });
 
-              db.run(
+              return db.query(
                 `CREATE TABLE ${module.name} (${fields.join(',')})`,
-                (err, result) => {
-                  if (err) {
-                    return debug('Create error', err);
-                  }
-                }
+                { raw: true }
               );
-            });
+            })
+        )
+      );
 
-            db.close();
-          }
-        );
-      });
+      await db.close();
     } catch (e) {
       debug('Init Error', e);
     }
@@ -56,9 +52,10 @@ class Sqlite {
   }
 
   open() {
-    const dbSetup = sqlite.verbose();
-    const db = new dbSetup.Database(this.pathToDb);
-    return db;
+    return new Sequelize({
+      dialect: 'sqlite',
+      storage: this.pathToDb
+    });
   }
 
   get(type, options) {
@@ -84,42 +81,38 @@ class Sqlite {
       }
     }
 
-    return new Promise((resolve, reject) => {
-      const db = this.open();
-      db.serialize(() => {
-        db.all(query.join(' '), (err, result) => {
-          if (err) {
-            debug('get err', err);
-            return reject(err);
-          }
-
-          db.close();
-          resolve(result);
-        });
-      });
+    return new Promise(async (resolve, reject) => {
+      try {
+        const db = this.open();
+        const [results] = await db.query(query.join(' '), { raw: true });
+        await db.close();
+        resolve(results);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   getOne(type, id) {
-    return new Promise((resolve, reject) => {
-      const db = this.open();
-      db.serialize(() => {
-        db.get(`SELECT * FROM ${type} WHERE id="${id}"`, (err, result) => {
-          if (err) {
-            debug('getOne err', err);
-            return reject(err);
-          }
-          db.close();
-          resolve(result);
-        });
-      });
+    return new Promise(async (resolve, reject) => {
+      try {
+        const db = this.open();
+        const [result] = await db.query(
+          `SELECT * FROM ${type} WHERE id="${id}"`,
+          { raw: true }
+        );
+        await db.close();
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   addOne(type, item) {
-    return new Promise((resolve, reject) => {
-      const db = this.open();
-      db.serialize(() => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const db = this.open();
         const columns = [];
         const values = [];
 
@@ -141,89 +134,70 @@ class Sqlite {
           }
         });
 
-        const statement = `INSERT INTO ${type} (${columns.join(',')}) VALUES(${columns.fill('?')})`;
-
-        db.run(statement, values, function (err, result) {
-          if (err) {
-            debug(err);
-            return reject(err);
-          }
-          db.close();
-          resolve();
-        });
-      });
+        const [result] = await db.query(
+          `INSERT INTO ${type} (${columns.join(',')}) VALUES("${values.join('","')}")`,
+          { raw: true }
+        );
+        await db.close();
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   updateOne(type, id, item) {
-    return new Promise((resolve, reject) => {
-      const db = this.open();
-      db.serialize(() => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const db = this.open();
         const columns = [];
-        const values = [];
 
         Object.keys(item).forEach(key => {
           if (item.hasOwnProperty(key)) {
-            columns.push(`${key}=?`);
-
-            const value = item[key];
-
-            values.push(
-              typeof value === 'number'
-                ? value
-                : typeof value === 'boolean' && value
-                  ? 1
-                  : typeof value === 'boolean' && !value
-                    ? 0
-                    : value
-            );
+            columns.push(`${key}="${item[key]}"`);
           }
         });
 
-        values.push(id);
-        const statement = `UPDATE ${type} SET ${columns.join(',')} WHERE id=?`;
-
-        db.run(statement, values, (err, result) => {
-          if (err) {
-            debug(err);
-            return reject(err);
-          }
-          db.close();
-          resolve();
-        });
-      });
+        const [result] = await db.query(
+          `UPDATE ${type} SET ${columns.join(',')} WHERE id="${id}"`,
+          { raw: true }
+        );
+        await db.close();
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   removeOne(type, id) {
-    return new Promise((resolve, reject) => {
-      const db = this.open();
-      db.serialize(() => {
-        db.all(`DELETE FROM ${type} WHERE id="${id}"`, (err, result) => {
-          if (err) {
-            debug('removeOne err', err);
-            return reject(err);
-          }
-          db.close();
-          resolve(result);
-        });
-      });
+    return new Promise(async (resolve, reject) => {
+      try {
+        const db = this.open();
+        const [result] = await db.query(
+          `DELETE FROM ${type} WHERE id="${id}"`,
+          { raw: true }
+        );
+        await db.close();
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
   getCount(type) {
-    return new Promise((resolve, reject) => {
-      const db = this.open();
-      db.serialize(() => {
-        db.all(`SELECT COUNT("_id") FROM ${type}`, (err, result) => {
-          if (err) {
-            debug('getCount err', err);
-            return reject(err);
-          }
-          db.close();
-          resolve(result);
+    return new Promise(async (resolve, reject) => {
+      try {
+        const db = this.open();
+        const [result] = await db.query(`SELECT COUNT("_id") FROM ${type}`, {
+          raw: true
         });
-      });
+        await db.close();
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      }
     });
   }
 
