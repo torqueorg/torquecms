@@ -27,6 +27,7 @@
     "kill-port": "2.0.1",
     "node-cron": "3.0.3",
     "on-headers": "1.0.2",
+    "sequelize": "^6.37.6",
     "sqlite3": "5.1.7",
     "uuid": "11.1.0",
     "webp-converter": "2.3.3"
