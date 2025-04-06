@@ -180,16 +180,18 @@ function start(optionsStart = {}) {
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser('secret-token'));
   app.use(async function (req, res, next) {
-    const ip =
-      req.ip ||
-      req._remoteAddress ||
-      (req.connection && req.connection.remoteAddress) ||
-      undefined;
+    // TODO: include IP to debug
+    // const ip =
+    //   req.ip ||
+    //   req._remoteAddress ||
+    //   (req.connection && req.connection.remoteAddress) ||
+    //   undefined;
     const startAt = process.hrtime();
 
     onHeaders(res, function onHeaders() {
       const diff = process.hrtime(startAt);
-      const time = diff[0] * 1e3 + diff[1] * 1e-6;
+      // TODO: include timestamp to debug
+      // const time = diff[0] * 1e3 + diff[1] * 1e-6;
 
       // debug(
       //   'middleware',
@@ -221,7 +223,7 @@ function start(optionsStart = {}) {
     next(createError(404));
   });
 
-  app.use(function (err, req, res, next) {
+  app.use(function (err, req, res) {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
     res.status(err.status || 500);
