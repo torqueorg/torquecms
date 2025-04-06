@@ -1,10 +1,11 @@
-import path from 'path';
+import path, { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import routes from './routes/index.js';
 import auth from './modules/auth/index.js';
 import config from './modules/config/index.js';
 import user from './modules/user/index.js';
 
-const __dirname = import.meta.dirname;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const mainTheme = {
   name: 'main-theme',
