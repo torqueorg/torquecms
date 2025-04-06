@@ -1,9 +1,6 @@
-import jest from 'jest';
-
 describe('Index', () => {
   beforeAll(() => {
     return new Promise(resolve => {
-      // console.log('before all');
       resolve();
     });
   });
