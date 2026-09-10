@@ -1,4 +1,5 @@
-import path from 'path';
+import path, { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 // import routes from './routes/index.js';
 import adminAddOne from './routes/adminAddOne.js';
 import adminEdit from './routes/adminEdit.js';
@@ -9,7 +10,7 @@ import adminUpdateOne from './routes/adminUpdateOne.js';
 // import adminRemoveList from './routes/adminRemoveList.js';
 import adminRemoveOne from './routes/adminRemoveOne.js';
 
-const __dirname = import.meta.dirname;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const crud = dbTable => {
   const routeAdminAdd = {

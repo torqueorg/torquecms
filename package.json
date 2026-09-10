@@ -4,7 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "NODE_ENV=development nodemon --trace-warnings ./example/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest",
+    "coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --coverage"
   },
   "type": "module",
   "keywords": [],
@@ -12,14 +13,14 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
-    "bootstrap": "5.3.3",
+    "bootstrap": "5.3.6",
     "bootstrap-icons": "1.11.3",
     "cookie-parser": "1.4.7",
     "debug": "4.4.0",
-    "dotenv": "16.4.7",
+    "dotenv": "16.5.0",
     "express": "4.21.2",
     "express-handlebars": "8.0.1",
-    "formidable": "3.5.2",
+    "formidable": "3.5.4",
     "hbs": "4.2.0",
     "http-errors": "2.0.0",
     "jimp": "1.6.0",
@@ -33,6 +34,9 @@
     "webp-converter": "2.3.3"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.26.9",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
     "nodemon": "3.1.9",
     "prettier": "3.5.3"
   },

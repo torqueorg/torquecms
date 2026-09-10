@@ -3,7 +3,8 @@ import express from 'express';
 import http from 'http';
 import https from 'https';
 import createError from 'http-errors';
-import path from 'path';
+import path, { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import cookieParser from 'cookie-parser';
 import { engine } from 'express-handlebars';
 import onHeaders from 'on-headers';
@@ -18,14 +19,14 @@ import crud from './libs/crud/index.js';
 
 import themeDefault from './theme/index.js';
 
-const __dirname = import.meta.dirname;
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const debug = debugSetup('app/src/index');
 
 function isPortInUse(port) {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
 
-    server.once('error', function(err) {
+    server.once('error', function (err) {
       if (err.code === 'EADDRINUSE') {
         return resolve(true);
       }
@@ -33,7 +34,7 @@ function isPortInUse(port) {
       reject(err);
     });
 
-    server.once('listening', function() {
+    server.once('listening', function () {
       server.close();
       resolve(false);
     });
@@ -74,12 +75,12 @@ function start(optionsStart = {}) {
   const server =
     options.options && options.options.SSL
       ? https.createServer(
-        {
-          key: options.options.SSL.key,
-          cert: options.options.SSL.cert
-        },
-        app
-      )
+          {
+            key: options.options.SSL.key,
+            cert: options.options.SSL.cert
+          },
+          app
+        )
       : http.createServer(app);
   const router = express.Router();
   const views = [];
@@ -179,16 +180,18 @@ function start(optionsStart = {}) {
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser('secret-token'));
   app.use(async function (req, res, next) {
-    const ip =
-      req.ip ||
-      req._remoteAddress ||
-      (req.connection && req.connection.remoteAddress) ||
-      undefined;
+    // TODO: include IP to debug
+    // const ip =
+    //   req.ip ||
+    //   req._remoteAddress ||
+    //   (req.connection && req.connection.remoteAddress) ||
+    //   undefined;
     const startAt = process.hrtime();
 
     onHeaders(res, function onHeaders() {
       const diff = process.hrtime(startAt);
-      const time = diff[0] * 1e3 + diff[1] * 1e-6;
+      // TODO: include timestamp to debug
+      // const time = diff[0] * 1e3 + diff[1] * 1e-6;
 
       // debug(
       //   'middleware',
@@ -220,22 +223,24 @@ function start(optionsStart = {}) {
     next(createError(404));
   });
 
-  app.use(function (err, req, res, next) {
+  app.use(function (err, req, res) {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
     res.status(err.status || 500);
     res.render('error');
   });
 
-  isPortInUse(port).then(function(isInUse) {
-    if (isInUse) {
-      killPort(port);
-    }
+  isPortInUse(port)
+    .then(function (isInUse) {
+      if (isInUse) {
+        killPort(port);
+      }
 
-    server.listen(port);
-  }).catch(function(err) {
-    console.error(err);
-  });
+      server.listen(port);
+    })
+    .catch(function (err) {
+      console.error(err);
+    });
 
   server.on('error', function (error) {
     if (error.syscall !== 'listen') {
