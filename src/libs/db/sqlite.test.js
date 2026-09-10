@@ -1,11 +1,11 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import Sqlite from './sqlite.js';
 import { v7 as uuid } from 'uuid';
-import path, { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import crud from '../crud/index.js';
 import example from '../../../example/theme/index.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, '..', '..', '..', 'example', 'example.db');
+const dbPath = path.join(import.meta.dirname, `test-${Date.now()}.db`);
 
 describe('Sqlite', () => {
   let db;
@@ -16,21 +16,32 @@ describe('Sqlite', () => {
     lastName: 'Johnson',
     email: 'alice.johnson@example.com',
     password: '12345',
-    created: created,
-    modified: created,
+    created: created.toString(),
+    modified: created.toString(),
     recoveryToken: ''
   };
 
   beforeAll(async () => {
-    db = new Sqlite(dbPath, example.dbTables);
+    const dbSchemas = example.dbTables.map(dbTable => ({
+      name: dbTable.name,
+      fields: [...crud.fields, ...dbTable.fields]
+    }));
 
-    // Wait a tiny bit to let init() finish table creation
-    await new Promise(res =>
-      setTimeout(async () => {
-        res();
-        // await db.addOne('users', { id: 1, name: 'Alice', active: true });
-      }, 1000)
-    );
+    db = new Sqlite(dbPath, dbSchemas);
+    await db.ready;
+  });
+
+  afterAll(async () => {
+    if (db) {
+      await db.close();
+    }
+    if (fs.existsSync(dbPath)) {
+      try {
+        fs.unlinkSync(dbPath);
+      } catch {
+        // ignore
+      }
+    }
   });
 
   it('should initialize db', async () => {

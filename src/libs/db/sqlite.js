@@ -2,11 +2,13 @@ import debugSetup from 'debug';
 import Sequelize from 'sequelize';
 
 const debug = debugSetup('app/src/libs/db/sqlite');
+const dbDebug = debugSetup('db:sqlite');
 
 class Sqlite {
   constructor(pathToDb, modules) {
     this.pathToDb = pathToDb;
-    this.init(modules);
+    this.db = this.open();
+    this.ready = this.init(modules);
   }
 
   async init(modules) {
@@ -17,30 +19,30 @@ class Sqlite {
         { raw: true }
       );
 
-      await Promise.all(
-        modules.map(
-          module =>
-            new Promise((resolve, reject) => {
-              if (tables.find(table => table.name === module.name)) {
-                resolve();
-                return;
-              }
+      if (modules && modules.length) {
+        await Promise.all(
+          modules.map(
+            module =>
+              new Promise((resolve, reject) => {
+                if (tables.find(table => table.name === module.name)) {
+                  resolve();
+                  return;
+                }
 
-              const fields = module.fields.map(function (field) {
-                return [field.name, field.type, field.params.join(' ')].join(
-                  ' '
-                );
-              });
+                const fields = module.fields.map(function (field) {
+                  return [field.name, field.type, field.params.join(' ')].join(
+                    ' '
+                  );
+                });
 
-              return db.query(
-                `CREATE TABLE ${module.name} (${fields.join(',')})`,
-                { raw: true }
-              );
-            })
-        )
-      );
-
-      await db.close();
+                return db.query(
+                  `CREATE TABLE ${module.name} (${fields.join(',')})`,
+                  { raw: true }
+                ).then(resolve).catch(reject);
+              })
+          )
+        );
+      }
     } catch (e) {
       debug('Init Error', e);
     }
@@ -49,14 +51,27 @@ class Sqlite {
   }
 
   open() {
+    if (this.db) {
+      return this.db;
+    }
+
     return new Sequelize({
       dialect: 'sqlite',
-      storage: this.pathToDb
+      storage: this.pathToDb,
+      logging: msg => dbDebug(msg)
     });
+  }
+
+  async close() {
+    if (this.db) {
+      await this.db.close();
+      this.db = null;
+    }
   }
 
   get(type, options) {
     const query = [`SELECT * FROM ${type}`];
+    const replacements = {};
 
     if (options) {
       const where = [];
@@ -66,7 +81,8 @@ class Sqlite {
       }
 
       if (options.from) {
-        where.push(`${options.from.key} >= ${options.from.value}`);
+        where.push(`${options.from.key} >= :fromValue`);
+        replacements.fromValue = options.from.value;
       }
 
       if (where.length) {
@@ -74,15 +90,17 @@ class Sqlite {
       }
 
       if (options.limit) {
-        query.push(`LIMIT ${options.limit}`);
+        query.push(`LIMIT ${Number(options.limit)}`);
       }
     }
 
     return new Promise(async (resolve, reject) => {
       try {
         const db = this.open();
-        const [results] = await db.query(query.join(' '), { raw: true });
-        await db.close();
+        const [results] = await db.query(query.join(' '), {
+          replacements,
+          raw: true
+        });
         resolve(results);
       } catch (err) {
         reject(err);
@@ -95,11 +113,10 @@ class Sqlite {
       try {
         const db = this.open();
         const [result] = await db.query(
-          `SELECT * FROM ${type} WHERE id="${id}"`,
-          { raw: true }
+          `SELECT * FROM ${type} WHERE id = :id`,
+          { replacements: { id }, raw: true }
         );
-        await db.close();
-        resolve(result);
+        resolve(result && result.length ? result[0] : undefined);
       } catch (err) {
         reject(err);
       }
@@ -111,31 +128,28 @@ class Sqlite {
       try {
         const db = this.open();
         const columns = [];
-        const values = [];
+        const placeholders = [];
+        const replacements = {};
 
         Object.keys(item).forEach(key => {
           if (item.hasOwnProperty(key)) {
             columns.push(key);
+            placeholders.push(`:${key}`);
 
             const value = item[key];
-
-            values.push(
+            replacements[key] =
               typeof value === 'number'
                 ? value
-                : typeof value === 'boolean' && value
-                  ? 1
-                  : typeof value === 'boolean' && !value
-                    ? 0
-                    : value
-            );
+                : typeof value === 'boolean'
+                  ? value ? 1 : 0
+                  : value;
           }
         });
 
         const [result] = await db.query(
-          `INSERT INTO ${type} (${columns.join(',')}) VALUES("${values.join('","')}")`,
-          { raw: true }
+          `INSERT INTO ${type} (${columns.join(',')}) VALUES (${placeholders.join(',')})`,
+          { replacements, raw: true }
         );
-        await db.close();
         resolve(result);
       } catch (err) {
         reject(err);
@@ -147,19 +161,20 @@ class Sqlite {
     return new Promise(async (resolve, reject) => {
       try {
         const db = this.open();
-        const columns = [];
+        const sets = [];
+        const replacements = { id };
 
         Object.keys(item).forEach(key => {
           if (item.hasOwnProperty(key)) {
-            columns.push(`${key}="${item[key]}"`);
+            sets.push(`${key} = :${key}`);
+            replacements[key] = item[key];
           }
         });
 
         const [result] = await db.query(
-          `UPDATE ${type} SET ${columns.join(',')} WHERE id="${id}"`,
-          { raw: true }
+          `UPDATE ${type} SET ${sets.join(', ')} WHERE id = :id`,
+          { replacements, raw: true }
         );
-        await db.close();
         resolve(result);
       } catch (err) {
         reject(err);
@@ -172,10 +187,9 @@ class Sqlite {
       try {
         const db = this.open();
         const [result] = await db.query(
-          `DELETE FROM ${type} WHERE id="${id}"`,
-          { raw: true }
+          `DELETE FROM ${type} WHERE id = :id`,
+          { replacements: { id }, raw: true }
         );
-        await db.close();
         resolve(result);
       } catch (err) {
         reject(err);
@@ -190,7 +204,6 @@ class Sqlite {
         const [result] = await db.query(`SELECT COUNT("_id") FROM ${type}`, {
           raw: true
         });
-        await db.close();
         resolve(result);
       } catch (err) {
         reject(err);

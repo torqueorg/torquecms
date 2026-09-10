@@ -3,8 +3,7 @@ import express from 'express';
 import http from 'http';
 import https from 'https';
 import createError from 'http-errors';
-import path, { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import { engine } from 'express-handlebars';
 import onHeaders from 'on-headers';
@@ -19,7 +18,7 @@ import crud from './libs/crud/index.js';
 
 import themeDefault from './theme/index.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const debug = debugSetup('app/src/index');
 
 function isPortInUse(port) {
@@ -223,50 +222,61 @@ function start(optionsStart = {}) {
     next(createError(404));
   });
 
-  app.use(function (err, req, res) {
+  app.use(function (err, req, res, next) {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
     res.status(err.status || 500);
     res.render('error');
   });
 
-  isPortInUse(port)
-    .then(function (isInUse) {
-      if (isInUse) {
-        killPort(port);
+  return new Promise((resolve, reject) => {
+    isPortInUse(port)
+      .then(async function (isInUse) {
+        if (isInUse) {
+          if (options.forcePort) {
+            await killPort(port);
+          } else {
+            debug(`Port ${port} is in use; set options.forcePort: true to kill it`);
+          }
+        }
+
+        server.listen(port);
+      })
+      .catch(function (err) {
+        console.error(err);
+        reject(err);
+      });
+
+    server.on('error', function (error) {
+      if (error.syscall !== 'listen') {
+        reject(error);
+        throw error;
       }
 
-      server.listen(port);
-    })
-    .catch(function (err) {
-      console.error(err);
+      const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
+
+      switch (error.code) {
+        case 'EACCES':
+          console.error(bind + ' requires elevated privileges');
+          process.exit(1);
+          break;
+        case 'EADDRINUSE':
+          console.error(bind + ' is already in use');
+          process.exit(1);
+          break;
+        default:
+          reject(error);
+          throw error;
+      }
     });
 
-  server.on('error', function (error) {
-    if (error.syscall !== 'listen') {
-      throw error;
-    }
-
-    const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
-
-    switch (error.code) {
-      case 'EACCES':
-        console.error(bind + ' requires elevated privileges');
-        process.exit(1);
-        break;
-      case 'EADDRINUSE':
-        console.error(bind + ' is already in use');
-        process.exit(1);
-        break;
-      default:
-        throw error;
-    }
-  });
-  server.on('listening', function () {
-    const addr = server.address();
-    const bind =
-      typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
-    debug('Listening on ' + bind);
+    server.on('listening', function () {
+      const addr = server.address();
+      const bind =
+        typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
+      debug('Listening on ' + bind);
+      resolve({ app, server, db, port });
+    });
   });
 }
 
