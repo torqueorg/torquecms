@@ -15,7 +15,6 @@
 
   window.onload = function () {
     $('[data-dateformat]').each(function () {
-      console.log($(this).data('dateformat'));
       $(this).text(dateFormat($(this).text()));
     });
   };

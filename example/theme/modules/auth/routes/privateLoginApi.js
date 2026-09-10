@@ -30,7 +30,7 @@ async function privateLogin(req, res, next) {
     });
 
     auth.createAuth(res, id);
-    res.redirect('/private');
+    res.redirect('/admin');
   } catch (err) {
     debug('err', err.message);
     res.render('privateLogin', { layout: 'layoutPrivate', error: err.message });
