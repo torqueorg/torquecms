@@ -1,5 +1,4 @@
 import debugSetup from 'debug';
-import sqlite from 'sqlite3';
 import Sequelize from 'sequelize';
 
 const debug = debugSetup('app/src/libs/db/sqlite');
@@ -17,8 +16,6 @@ class Sqlite {
         'SELECT name FROM sqlite_master WHERE type="table"',
         { raw: true }
       );
-
-      console.log('tables', tables);
 
       await Promise.all(
         modules.map(
