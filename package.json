@@ -34,7 +34,7 @@
     "webp-converter": "3.0.1"
   },
   "devDependencies": {
-    "@babel/preset-env": "8.0.2",
+    "@babel/preset-env": "8.0.5",
     "babel-jest": "30.5.1",
     "jest": "30.5.1",
     "nodemon": "3.1.14",
